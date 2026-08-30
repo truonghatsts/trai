@@ -65,6 +65,10 @@ beforeEach(() => {
     'start-box': makeEl(),
     'start-message': makeEl(),
     'start-transcribe': makeEl(),
+    'transcript-actions': makeEl(),
+    'copy-transcript': makeEl(),
+    'source-link': makeEl(),
+    'copy-feedback': makeEl(),
   };
   vi.stubGlobal('document', { getElementById: vi.fn((id: string) => els[id] ?? null) });
   locationMock = { search: '', href: '' };

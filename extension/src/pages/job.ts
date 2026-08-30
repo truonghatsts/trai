@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js';
 import { CONFIG } from '../config.js';
 import { apiFetch } from '../background/api.js';
 import { splitIntoLines } from '../shared/reading-layout.js';
+import { isSafeWebUrl } from '../shared/actions.js';
 import { getToken } from '../shared/session.js';
 import { startJobForVideo } from '../shared/start.js';
 
@@ -39,13 +40,26 @@ const signinLink = document.getElementById('signin-link') as HTMLAnchorElement;
 const startBox = document.getElementById('start-box') as HTMLElement;
 const startMessageEl = document.getElementById('start-message') as HTMLElement;
 const startBtn = document.getElementById('start-transcribe') as HTMLButtonElement;
+const actionsRow = document.getElementById('transcript-actions') as HTMLElement;
+const copyBtn = document.getElementById('copy-transcript') as HTMLButtonElement;
+const sourceLink = document.getElementById('source-link') as HTMLAnchorElement;
+const copyFeedback = document.getElementById('copy-feedback') as HTMLElement;
 
 let userEmail: string | null = null;
+// Raw stored transcript text (contracts/actions.md §1): copy payload is this
+// string, never contentEl.textContent — 003 layout line breaks must not leak.
+let currentContent = '';
+let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 
-function renderTranscript(content: string): void {
+function renderTranscript(content: string, sourceUrl: string | null): void {
   statusEl.hidden = true;
   contentEl.hidden = false;
+  actionsRow.hidden = false;
   contentEl.textContent = content.length > 0 ? splitIntoLines(content) : '(No speech detected in this video.)';
+  // FR-005: link shown only when a stored source_url exists AND is a safe web URL.
+  const safe = sourceUrl !== null && isSafeWebUrl(sourceUrl);
+  sourceLink.hidden = !safe;
+  if (safe) sourceLink.href = sourceUrl;
 }
 
 function renderError(message: string, { retry = false, signIn = false } = {}): void {
@@ -96,13 +110,30 @@ function showSignInPrompt(): void {
 
 async function loadTranscript(id: string): Promise<void> {
   const { status, body } = await apiFetch<{
-    transcript?: { content: string };
+    transcript?: { content: string; source_url: string | null };
     error?: { message: string };
   }>(`/api/transcripts/${id}`);
-  if (status === 200 && body.transcript) renderTranscript(body.transcript.content);
-  else if (status === 401) showSignInPrompt();
+  if (status === 200 && body.transcript) {
+    currentContent = body.transcript.content;
+    renderTranscript(currentContent, body.transcript.source_url ?? null);
+  } else if (status === 401) showSignInPrompt();
   else renderError(body.error?.message ?? 'Could not load transcript.');
 }
+
+// FR-003: every click = fresh writeText + exactly one visible, temporary,
+// AT-announced outcome (role="status"); failure is never silent.
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(currentContent);
+    copyFeedback.textContent = 'Copied — transcript text is on your clipboard.';
+  } catch {
+    copyFeedback.textContent = 'Copy failed — your browser blocked clipboard access. Try again.';
+  }
+  if (feedbackTimer) clearTimeout(feedbackTimer);
+  feedbackTimer = setTimeout(() => {
+    copyFeedback.textContent = '';
+  }, 4000);
+});
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
