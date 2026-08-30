@@ -6,13 +6,49 @@
   </head>
   <body>
     <h1>Sign in</h1>
-    <form id="signin-form">
-      <label>Email <input id="email" type="email" required autocomplete="username" /></label>
-      <label
-        >Password <input id="password" type="password" required autocomplete="current-password"
-      /></label>
-      <button type="submit">Sign in</button>
-    </form>
+
+    <section id="signin-mode">
+      <form id="signin-form">
+        <label>Email <input id="email" type="email" required autocomplete="username" /></label>
+        <label
+          >Password <input id="password" type="password" required autocomplete="current-password"
+        /></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <p><button type="button" id="show-create">Create account</button></p>
+      <p><button type="button" id="show-forgot">Forgot password?</button></p>
+    </section>
+
+    <section id="create-mode" hidden>
+      <h2>Create account</h2>
+      <form id="create-form">
+        <label>Email <input id="create-email" type="email" required autocomplete="username" /></label>
+        <label
+          >Password <input id="create-password" type="password" required autocomplete="new-password"
+        /></label>
+        <label
+          >Confirm password
+          <input id="create-password2" type="password" required autocomplete="new-password"
+        /></label>
+        <button type="submit">Create account</button>
+      </form>
+      <p><button type="button" id="back-to-signin">Back to sign in</button></p>
+    </section>
+
+    <section id="forgot-mode" hidden>
+      <h2>Forgot password</h2>
+      <form id="forgot-form">
+        <label>Email <input id="forgot-email" type="email" required autocomplete="username" /></label>
+        <button type="submit">Send reset link</button>
+      </form>
+      <p><button type="button" id="back-to-signin-forgot">Back to sign in</button></p>
+    </section>
+
+    <section id="inbox-state" hidden>
+      <p>Check your inbox and spam for the confirmation email.</p>
+      <button type="button" id="resend-confirmation">Resend confirmation</button>
+    </section>
+
     <p id="error" role="alert"></p>
     <p><a href="history.html">History</a></p>
     <script src="signin.js"></script>

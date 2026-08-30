@@ -55,6 +55,16 @@ export function registerJobsRoutes(app: FastifyInstance): void {
   // Single entry point with US2 lookup semantics (data-model.md § Lookup
   // semantics): transcript first, then active job, then create.
   app.post<CreateJobBody>('/api/jobs', async (request, reply) => {
+    // FR-003 gate (contracts/api.md): after authGuard (401 first), unverified
+    // accounts are refused before any job read/write.
+    if (request.user.email_confirmed_at == null) {
+      return sendError(
+        reply,
+        ERR.emailNotVerified.status,
+        ERR.emailNotVerified.code,
+        ERR.emailNotVerified.message,
+      );
+    }
     const { source_url, duration_seconds } = request.body ?? {};
     if (typeof source_url !== 'string' || source_url.length === 0) {
       return sendError(reply, ERR.invalidUrl.status, ERR.invalidUrl.code, ERR.invalidUrl.message);
@@ -113,6 +123,15 @@ export function registerJobsRoutes(app: FastifyInstance): void {
   });
 
   app.post<JobParams>('/api/jobs/:id/retry', async (request, reply) => {
+    // FR-003 gate: retry is equally gated (contracts/api.md).
+    if (request.user.email_confirmed_at == null) {
+      return sendError(
+        reply,
+        ERR.emailNotVerified.status,
+        ERR.emailNotVerified.code,
+        ERR.emailNotVerified.message,
+      );
+    }
     const job = await getJobById(request.params.id, request.userId);
     if (!job) return sendError(reply, ERR.notFound.status, ERR.notFound.code, ERR.notFound.message);
     if (job.status !== 'error') {

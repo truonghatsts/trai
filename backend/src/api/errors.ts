@@ -34,4 +34,9 @@ export const ERR = {
   },
   notFound: { status: 404, code: 'not_found', message: 'Not found.' },
   notRetryable: { status: 409, code: 'not_retryable', message: 'Only failed jobs can be retried.' },
+  emailNotVerified: {
+    status: 403,
+    code: 'email_not_verified',
+    message: 'Confirm your email to start transcription.',
+  },
 } as const;

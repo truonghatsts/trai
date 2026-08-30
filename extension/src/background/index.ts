@@ -1,17 +1,16 @@
-// Action click handler (FR-002: new tab opens immediately). Flow per
-// contracts/ui.md: detect video page -> sign-in gate -> POST /api/jobs -> open tab.
-import { getToken } from './api.js';
-import { startJobForVideo, type VideoInfo } from '../shared/start.js';
+// Action click handler (FR-002: new tab opens immediately). The toolbar NEVER
+// starts transcription (FR-007, oracle review fix): whether or not a session
+// exists, it stores the pending video and opens the job page — only the job
+// page's explicit Transcribe button calls startJobForVideo. The service worker
+// also owns the single in-flight session refresh for all extension contexts
+// (FR-006, oracle review fix).
+import { initRefresh } from './refresh.js';
+import type { VideoInfo } from '../shared/start.js';
+
+initRefresh();
 
 function openTab(path: string): void {
   chrome.tabs.create({ url: chrome.runtime.getURL(path) });
-}
-
-async function requireSignIn(video: VideoInfo): Promise<void> {
-  // The job does not start until sign-in succeeds (US1-AC1); the pending video
-  // is picked up by signin.html after a successful login.
-  await chrome.storage.local.set({ pendingVideo: video });
-  openTab('src/pages/signin.html');
 }
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -29,24 +28,8 @@ chrome.action.onClicked.addListener(async (tab) => {
     return;
   }
 
-  const token = await getToken();
-  if (!token) {
-    await requireSignIn(video);
-    return;
-  }
-
-  const result = await startJobForVideo(video);
-  if (result.page === 'job') {
-    openTab(`src/pages/job.html?job=${result.jobId}${result.view ? '&view=transcript' : ''}`);
-    return;
-  }
-  if (result.code === 'unauthorized') {
-    // Edge case: session expired/invalid at click time -> sign in again.
-    await requireSignIn(video);
-    return;
-  }
-  // 400 (duration_too_long / invalid_url / not_a_video_page) or 409 (active_job_exists).
-  openTab(
-    `src/pages/notice.html?code=${encodeURIComponent(result.code)}&message=${encodeURIComponent(result.message)}`,
-  );
+  // FR-007: no session check, no job start — store the pending video and let
+  // the job page's explicit Transcribe click create the job.
+  await chrome.storage.local.set({ pendingVideo: video });
+  openTab('src/pages/job.html');
 });

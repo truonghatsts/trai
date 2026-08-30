@@ -1,10 +1,22 @@
-// Job page. Two modes:
+// Job page. Modes:
 // - default: poll GET /api/jobs/{id} every ~3 s (research #8), render status;
 //   fully reconstructible from that endpoint alone, so tab close/reopen is
 //   safe at any state (FR-012 / US4).
 // - view=transcript: render a stored transcript from GET /api/transcripts/{id}
 //   (US2-AC1, ui.md action flow step 4).
+// - pendingVideo + no job id: explicit Transcribe start (FR-007/SC-005) — no
+//   job is created without this click.
+// - unverified user (getUser email_confirmed_at null or 403 email_not_verified
+//   on retry): verification guidance + resend (FR-004, contracts/auth.md).
+import { createClient } from '@supabase/supabase-js';
+import { CONFIG } from '../config.js';
 import { apiFetch } from '../background/api.js';
+import { getToken } from '../shared/session.js';
+import { startJobForVideo } from '../shared/start.js';
+
+const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 const STATUS_TEXT: Record<string, string> = {
   queued: 'Queued — waiting to start',
@@ -21,7 +33,13 @@ const contentEl = document.getElementById('content') as HTMLElement;
 const errorBox = document.getElementById('error-box') as HTMLElement;
 const errorMessageEl = document.getElementById('error-message') as HTMLElement;
 const retryBtn = document.getElementById('retry') as HTMLButtonElement;
+const verifyResendBtn = document.getElementById('verify-resend') as HTMLButtonElement;
 const signinLink = document.getElementById('signin-link') as HTMLAnchorElement;
+const startBox = document.getElementById('start-box') as HTMLElement;
+const startMessageEl = document.getElementById('start-message') as HTMLElement;
+const startBtn = document.getElementById('start-transcribe') as HTMLButtonElement;
+
+let userEmail: string | null = null;
 
 function renderTranscript(content: string): void {
   statusEl.hidden = true;
@@ -34,7 +52,45 @@ function renderError(message: string, { retry = false, signIn = false } = {}): v
   errorBox.hidden = false;
   errorMessageEl.textContent = message;
   retryBtn.hidden = !retry;
+  verifyResendBtn.hidden = true;
   signinLink.hidden = !signIn;
+}
+
+// FR-004 guidance: unverified account — inbox + spam, resend, sign-in link.
+function renderVerifyGuidance(): void {
+  statusEl.hidden = true;
+  contentEl.hidden = true;
+  errorBox.hidden = false;
+  errorMessageEl.textContent = 'Confirm your email to start transcription — check your inbox and spam';
+  retryBtn.hidden = true;
+  verifyResendBtn.hidden = false;
+  signinLink.hidden = false;
+  signinLink.href = 'signin.html';
+}
+
+// Proactive gate (contracts/auth.md § Verification guidance): same state when
+// getUser reports email_confirmed_at null at job-view load.
+async function currentUserUnverified(): Promise<boolean> {
+  const token = await getToken();
+  if (!token) return false;
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return false;
+  userEmail = data.user.email ?? null;
+  return data.user.email_confirmed_at == null;
+}
+
+// Session expired: prompt sign-in; the job view is preserved for resumption
+// (US4 edge case) — signin.html?s next param routes back after sign-in. With
+// no job id (pending-video start mode) the resume target is the bare job page,
+// which re-offers the explicit Transcribe click.
+function showSignInPrompt(): void {
+  const resume = jobId
+    ? view === 'transcript'
+      ? `job.html?job=${jobId}&view=transcript`
+      : `job.html?job=${jobId}`
+    : 'job.html';
+  signinLink.href = `signin.html?next=${encodeURIComponent(resume)}`;
+  renderError('Your session expired. Sign in again to continue.', { signIn: true });
 }
 
 async function loadTranscript(id: string): Promise<void> {
@@ -43,6 +99,7 @@ async function loadTranscript(id: string): Promise<void> {
     error?: { message: string };
   }>(`/api/transcripts/${id}`);
   if (status === 200 && body.transcript) renderTranscript(body.transcript.content);
+  else if (status === 401) showSignInPrompt();
   else renderError(body.error?.message ?? 'Could not load transcript.');
 }
 
@@ -56,7 +113,7 @@ async function pollJob(id: string): Promise<void> {
     }>(`/api/jobs/${id}`);
 
     if (status === 401) {
-      renderError('Your session expired. Sign in again to continue.', { signIn: true });
+      showSignInPrompt();
       return;
     }
     if (status === 404 || !body.job) {
@@ -85,7 +142,11 @@ retryBtn.addEventListener('click', async () => {
     { method: 'POST' },
   );
   if (status === 401) {
-    renderError('Your session expired. Sign in again to continue.', { signIn: true });
+    showSignInPrompt();
+    return;
+  }
+  if (status === 403 && body.error?.code === 'email_not_verified') {
+    renderVerifyGuidance();
     return;
   }
   if (status === 200) {
@@ -99,10 +160,69 @@ retryBtn.addEventListener('click', async () => {
   errorMessageEl.textContent = body.error?.message ?? 'Retry failed.';
 });
 
-if (!jobId) {
-  renderError('Missing job id.');
-} else if (view === 'transcript') {
-  void loadTranscript(jobId);
-} else {
-  void pollJob(jobId);
+verifyResendBtn.addEventListener('click', async () => {
+  if (!userEmail) return;
+  verifyResendBtn.disabled = true;
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: userEmail,
+    options: { emailRedirectTo: CONFIG.BACKEND_URL + '/auth/confirm' },
+  });
+  verifyResendBtn.disabled = false;
+  errorMessageEl.textContent = error
+    ? error.message
+    : 'Confirmation email sent — check your inbox and spam';
+});
+
+async function main(): Promise<void> {
+  // FR-007: pendingVideo without a job id -> explicit Transcribe start mode.
+  const { pendingVideo } = await chrome.storage.local.get('pendingVideo');
+
+  if (!jobId) {
+    if (!pendingVideo) {
+      renderError('Missing job id.');
+      return;
+    }
+    if (await currentUserUnverified()) {
+      renderVerifyGuidance();
+      return;
+    }
+    startBox.hidden = false;
+    startMessageEl.textContent = pendingVideo.sourceUrl;
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      const result = await startJobForVideo(pendingVideo);
+      if (result.page === 'job') {
+        // Only a successful job/transcript result consumes the pending video
+        // (oracle review fix); any failure keeps it so the flow can restart.
+        await chrome.storage.local.remove('pendingVideo');
+        location.href = `job.html?job=${result.jobId}${result.view ? '&view=transcript' : ''}`;
+        return;
+      }
+      if (result.code === 'unauthorized') {
+        // 401 (the one silent refresh failed): sign-in path; pendingVideo is
+        // retained — after sign-in the job page offers Transcribe again.
+        showSignInPrompt();
+        return;
+      }
+      if (result.code === 'email_not_verified') {
+        // Retained too: after confirming, the user returns and clicks again.
+        await currentUserUnverified(); // populate userEmail for the resend button
+        renderVerifyGuidance();
+        return;
+      }
+      // 400 / 409: pendingVideo kept; surface the backend error via notice.
+      location.href = `notice.html?code=${encodeURIComponent(result.code)}&message=${encodeURIComponent(result.message)}`;
+    });
+    return;
+  }
+
+  if (await currentUserUnverified()) {
+    renderVerifyGuidance();
+    return;
+  }
+  if (view === 'transcript') void loadTranscript(jobId);
+  else void pollJob(jobId);
 }
+
+void main();
