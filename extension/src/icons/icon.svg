@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- TRAI lantern icon — derives from shared/theme.css .lantern (feature 003),
+       exact 003 token palette: --gold #E8A33D body, --gold-deep #B7791F edge
+       stripes/cap/tassel, --paper-card #FFFDF8 window slats, --indigo #403B8C
+       accent line. Lantern-only glyph, no text; glyph ~85% of canvas. -->
+  <defs>
+    <linearGradient id="body" gradientUnits="userSpaceOnUse" x1="25" y1="0" x2="103" y2="0">
+      <stop offset="0" stop-color="#B7791F"/>
+      <stop offset="0.14" stop-color="#E8A33D"/>
+      <stop offset="0.86" stop-color="#E8A33D"/>
+      <stop offset="1" stop-color="#B7791F"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <clipPath id="window">
+      <rect x="38" y="31" width="52" height="62" rx="16.6"/>
+    </clipPath>
+  </defs>
+
+  <!-- soft halo, mirrors .lantern box-shadow glow -->
+  <ellipse cx="64" cy="62" rx="50" ry="54" fill="#E8A33D" opacity="0.22" filter="url(#glow)"/>
+  <ellipse cx="64" cy="62" rx="42" ry="46" fill="#E8A33D" opacity="0.16" filter="url(#glow)"/>
+
+  <!-- cap: gold-deep, top-rounded, above the body (.lantern::after) -->
+  <path d="M 56,9 A 8,8 0 0 1 72,9 L 72,16 L 56,16 Z" fill="#B7791F"/>
+
+  <!-- body: warm-gold rounded lantern with gold-deep vertical edge stripes
+       (border-radius 42% top / 34% bottom, gradient stripes per .lantern) -->
+  <path d="M 58,18 A 33,33 0 0 0 25,51 L 25,85 A 26.5,26.5 0 0 0 51.5,106 L 76.5,106 A 26.5,26.5 0 0 0 103,85 L 103,51 A 33,33 0 0 0 70,18 Z" fill="url(#body)"/>
+
+  <!-- window slats: repeating paper-card vertical bars (.lantern::before) -->
+  <g clip-path="url(#window)" fill="#FFFDF8" opacity="0.8">
+    <rect x="38" y="31" width="4.2" height="62"/>
+    <rect x="61.6" y="31" width="4.2" height="62"/>
+    <rect x="85.2" y="31" width="4.2" height="62"/>
+  </g>
+
+  <!-- indigo accent line under the cap (--indigo #403B8C, optional per research #4) -->
+  <rect x="38" y="22.5" width="52" height="1.5" rx="0.75" fill="#403B8C" opacity="0.55"/>
+
+  <!-- tassel: gold-deep dot below the body (.lantern::after box-shadow) -->
+  <rect x="60.5" y="109" width="7" height="12" rx="3.5" fill="#B7791F"/>
+</svg>

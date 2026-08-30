@@ -40,6 +40,7 @@ async function copyStatic() {
     await cp(`src/pages/${page}`, path.join(dist, 'src', 'pages', page));
   }
   await cp('../shared/theme.css', path.join(dist, 'src', 'pages', 'theme.css'));
+  await cp('src/icons', path.join(dist, 'icons'), { recursive: true });
   console.log('static assets copied');
 }
 
