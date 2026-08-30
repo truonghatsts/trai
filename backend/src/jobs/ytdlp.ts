@@ -27,6 +27,8 @@ export async function probeDuration(url: string): Promise<number | null> {
 }
 
 // FR-010: audio lives only in a per-job temp dir, deleted by the caller's finally.
+// `--audio-format mp3` forces deterministic MP3 extraction so the file always
+// matches the `audio/mpeg` MIME the STT request declares (stt.ts).
 export async function downloadAudio(url: string): Promise<{ filePath: string; dir: string }> {
   const dir = await mkdtemp(path.join(config.tempDir, 'vt-'));
   try {
@@ -35,6 +37,8 @@ export async function downloadAudio(url: string): Promise<{ filePath: string; di
       '-f',
       'bestaudio',
       '-x',
+      '--audio-format',
+      'mp3',
       '-o',
       path.join(dir, 'audio.%(ext)s'),
       url,
