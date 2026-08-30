@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Env / secrets (examples are tracked)
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Python (supabase CLI local stack, if used)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
