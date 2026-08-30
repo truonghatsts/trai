@@ -29,3 +29,9 @@ venv/
 # Supabase local
 supabase/.temp/
 supabase/.branches/
+
+# Project-local regression skill (contains test credentials)
+.opencode/skills/regression-test/
+
+# Regression test evidence
+.tmp/

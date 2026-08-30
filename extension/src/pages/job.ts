@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { CONFIG } from '../config.js';
 import { apiFetch } from '../background/api.js';
+import { splitIntoLines } from '../shared/reading-layout.js';
 import { getToken } from '../shared/session.js';
 import { startJobForVideo } from '../shared/start.js';
 
@@ -44,7 +45,7 @@ let userEmail: string | null = null;
 function renderTranscript(content: string): void {
   statusEl.hidden = true;
   contentEl.hidden = false;
-  contentEl.textContent = content.length > 0 ? content : '(No speech detected in this video.)';
+  contentEl.textContent = content.length > 0 ? splitIntoLines(content) : '(No speech detected in this video.)';
 }
 
 function renderError(message: string, { retry = false, signIn = false } = {}): void {

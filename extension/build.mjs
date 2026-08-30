@@ -39,6 +39,7 @@ async function copyStatic() {
   for (const page of ['signin.html', 'job.html', 'history.html', 'notice.html']) {
     await cp(`src/pages/${page}`, path.join(dist, 'src', 'pages', page));
   }
+  await cp('../shared/theme.css', path.join(dist, 'src', 'pages', 'theme.css'));
   console.log('static assets copied');
 }
 

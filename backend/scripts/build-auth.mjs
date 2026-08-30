@@ -47,4 +47,5 @@ await build({
 });
 await cp('src/auth/pages/confirm.html', path.join(outDir, 'confirm.html'));
 await cp('src/auth/pages/reset.html', path.join(outDir, 'reset.html'));
+await cp(path.join(root, '..', 'shared', 'theme.css'), path.join(outDir, 'theme.css'));
 console.log('auth pages bundled');

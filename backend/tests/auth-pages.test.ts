@@ -29,6 +29,13 @@ describe('auth public pages', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
   });
+
+  it('GET /auth/theme.css serves the theme stylesheet (200, CSS)', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/auth/theme.css' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/css');
+  });
 });
 
 // Credentials arrive in the URL fragment only (contracts/auth.md § Public
