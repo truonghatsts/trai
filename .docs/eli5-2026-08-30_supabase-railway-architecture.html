@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Video Download Works — Explained Simply</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f0f4f8;
+    color: #1a2b3c;
+    padding: 2rem 1rem;
+    line-height: 1.5;
+  }
+  h1 { text-align:center; font-size:2rem; margin-bottom:.3rem; }
+  .subtitle { text-align:center; font-size:1.1rem; color:#5a6b7a; margin-bottom:2.5rem; }
+
+  /* ===== The big picture ===== */
+  .flow { display:flex; align-items:stretch; justify-content:center; gap:0; flex-wrap:wrap; }
+  .node {
+    background:#fff; border-radius:1rem; padding:1rem 1.2rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    text-align:center; min-width:170px;
+    display:flex; flex-direction:column; justify-content:center; gap:.3rem;
+  }
+  .node .icon { font-size:3.2rem; }
+  .node .name { font-weight:800; font-size:1.05rem; }
+  .node .desc { font-size:.85rem; color:#5a6b7a; }
+
+  .arrow {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:0 .6rem; font-size:1.9rem; font-weight:800; color:#2b6cb0;
+    min-width:70px;
+  }
+  .arrow small { font-size:.7rem; color:#5a6b7a; font-weight:400; text-align:center; }
+
+  /* ===== The two companies ===== */
+  .companies { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin:3.5rem 0 2rem; }
+  .company {
+    flex:1; min-width:300px; max-width:560px;
+    border-radius:1.2rem; padding:1.4rem 1.6rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+  .company h2 { font-size:1.3rem; margin-bottom:.4rem; }
+  .company p { font-size:.95rem; margin-bottom:1rem; }
+  .company .box {
+    background:rgba(255,255,255,.65); border-radius:.8rem;
+    padding:.9rem 1rem; margin-bottom:.8rem;
+    font-size:.9rem;
+  }
+  .company .box b { display:block; margin-bottom:.2rem; }
+  .supabase { background:#3ecf8e22; border:3px solid #3ecf8e; }
+  .supabase h2 { color:#1e8a5a; }
+  .railway { background:#ff7a1a22; border:3px solid #ff7a1a; }
+  .railway h2 { color:#c25e00; }
+
+  /* ===== Numbered steps ===== */
+  .steps { max-width:720px; margin:2.5rem auto 0; }
+  .steps h2 { text-align:center; margin-bottom:1rem; }
+  .step {
+    background:#fff; border-radius:.8rem; padding:.9rem 1.2rem; margin-bottom:.7rem;
+    display:flex; align-items:center; gap:1rem;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+    font-size:1rem;
+  }
+  .step .num {
+    background:#2b6cb0; color:#fff; border-radius:50%;
+    width:2.2rem; height:2.2rem; min-width:2.2rem;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:1.1rem;
+  }
+  .step .icon { font-size:1.8rem; }
+
+  .note {
+    max-width:720px; margin:2rem auto 0; text-align:center;
+    background:#fff8e1; border:2px dashed #f0a500; border-radius:1rem;
+    padding:1rem 1.2rem; font-size:.95rem;
+  }
+  footer { text-align:center; margin-top:2.5rem; color:#8a9aa8; font-size:.8rem; }
+</style>
+</head>
+<body>
+
+<h1>🎬 How "Download This Video" Works</h1>
+<p class="subtitle">One picture, no jargon. For complete beginners.</p>
+
+<!-- ===== THE BIG PICTURE ===== -->
+<div class="flow">
+  <div class="node">
+    <div class="icon">🧩</div>
+    <div class="name">Browser Extension</div>
+    <div class="desc">The button you click</div>
+  </div>
+  <div class="arrow">➜<small>asks for a job</small></div>
+  <div class="node">
+    <div class="icon">🗄️</div>
+    <div class="name">Supabase</div>
+    <div class="desc">The message board</div>
+  </div>
+  <div class="arrow">➜<small>sees new job</small></div>
+  <div class="node">
+    <div class="icon">🤖</div>
+    <div class="name">Worker</div>
+    <div class="desc">yt-dlp + ffmpeg<br>(on Railway)</div>
+  </div>
+  <div class="arrow">➜<small>writes result</small></div>
+  <div class="node">
+    <div class="icon">🗄️</div>
+    <div class="name">Supabase</div>
+    <div class="desc">board updated: ✅ done</div>
+  </div>
+  <div class="arrow">➜<small>keeps checking</small></div>
+  <div class="node">
+    <div class="icon">🧩</div>
+    <div class="name">Browser Extension</div>
+    <div class="desc">shows your file 🎉</div>
+  </div>
+</div>
+
+<p class="note" style="max-width:760px; margin-top:1.5rem;">
+  🔑 One secret: the extension <b>never talks to the worker</b>.<br>
+  It only talks to Supabase. The worker only talks to Supabase.<br>
+  The message board connects them. Simple!
+</p>
+
+<!-- ===== TWO SEPARATE COMPANIES ===== -->
+<h2 style="text-align:center; margin-top:3rem;">Two separate companies, two separate bills 💳</h2>
+<div class="companies">
+  <div class="company supabase">
+    <h2>🌿 Supabase — The Message Board</h2>
+    <p>One company, one account, one login.</p>
+    <div class="box"><b>🔐 Login &amp; Auth</b>Checks who you are. Only you can see your jobs.</div>
+    <div class="box"><b>🗄️ Job Board (database)</b>A table of jobs: <code>waiting → downloading → done</code>. Everyone reads &amp; writes here.</div>
+    <div class="box"><b>📦 Storage (optional)</b>A locker for finished video files.</div>
+  </div>
+  <div class="company railway">
+    <h2>🚂 Railway (or Fly.io) — The Worker</h2>
+    <p>Another company, a different account, a different login.</p>
+    <div class="box"><b>🤖 Long-running worker</b>A program that runs 24/7, waiting for jobs.</div>
+    <div class="box"><b>⬇️ yt-dlp</b>Fetches the video from YouTube etc.</div>
+    <div class="box"><b>🎞️ ffmpeg</b>Turns it into the file you want (mp3, mp4…).</div>
+  </div>
+</div>
+
+<!-- ===== NUMBERED STEPS ===== -->
+<div class="steps">
+  <h2>⏱️ What happens, step by step</h2>
+  <div class="step"><div class="num">1</div><div class="icon">🧩</div><div>You click the extension button. It asks Supabase: <i>"please add a job: download this video"</i>. Supabase checks you are logged in. ✅</div></div>
+  <div class="step"><div class="num">2</div><div class="icon">🗄️</div><div>The job appears on the board with status <b>waiting</b>.</div></div>
+  <div class="step"><div class="num">3</div><div class="icon">🤖</div><div>The worker on Railway notices the job. It sets status to <b>downloading</b> and starts yt-dlp + ffmpeg. ⏳ This can take a while!</div></div>
+  <div class="step"><div class="num">4</div><div class="icon">🗄️</div><div>When finished, the worker writes back: status <b>done</b> + a link to the file (or uploads it to Supabase Storage). If it failed: status <b>failed</b>.</div></div>
+  <div class="step"><div class="num">5</div><div class="icon">🧩</div><div>The extension keeps asking Supabase: <i>"is it done yet?"</i> 🔁 Every few seconds.</div></div>
+  <div class="step"><div class="num">6</div><div class="icon">🎉</div><div>Board says <b>done</b> → the extension shows you the file / download link. <b>failed</b> → it shows a sad message. That's it!</div></div>
+</div>
+
+<p class="note">
+  💡 Why two companies? The message board (Supabase) is great at quick lookups &amp; logins.<br>
+  The worker (Railway) is great at long, heavy jobs like downloading a whole video.<br>
+  Each one does what it's best at — they just chat through the board.
+</p>
+
+<footer>Made for beginners · Aug 30, 2026</footer>
+
+</body>
+</html>
