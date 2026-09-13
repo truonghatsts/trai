@@ -6,9 +6,10 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && python3 -m pip install --break-system-packages yt-dlp
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY backend/package*.json backend/
+RUN cd backend && npm ci
 COPY . .
+WORKDIR /app/backend
 RUN npm run build
 ENV YTDLP_PATH=/usr/local/bin/yt-dlp WORKER_TEMP_DIR=/tmp
 CMD ["node", "dist/server.js"]
