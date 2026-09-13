@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 ARG SUPABASE_URL
 ARG SUPABASE_ANON_KEY
 RUN apt-get update \
